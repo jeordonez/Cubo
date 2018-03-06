@@ -55,31 +55,43 @@ public class Demo {
 
         String fragmentShaderSource = "#version 330 core\n"
         + "out vec4 fragColor;\n"
-        //+ "in vec3 fragPos;\n"
-//        + "in vec3 Normal;\n"
-//        +"uniform vec3 lightPos;\n"
-        +"uniform vec3 lightColor;\n"
-        +"uniform vec3 objectColor;\n"
-              
+        + "in vec3 fragPos;\n"
+        + "in vec3 Normal;\n"
+        + "in vec2 UV;\n"
+        + "uniform vec3 lightPos;\n"
+        + "uniform vec3 viewPos;"
+        + "uniform vec3 lightColor;\n"
+//        + "uniform vec3 objectColor;\n"
+        + "uniform sampler2D diffuseTex;\n"
+       // + "const float ambientStrength = 0.2;\n"
         + "void main()\n"
         + "{\n"
-        + "float ambientStrength = 0.1;\n"
-        + "vec3 ambient = ambientStrength * lightColor;\n"
-//        
-//        
-//        + "vec3 norm = normalize(normal);\n"
-//        + "vec3 lightDir = normalize(lightPos - fragPos);\n"
-//        + "float diff = max(dot(norm, lightDir), 0.0);\n"
-//        + "vec3 diffuse = diff * lightColor;\n"
+
+       // + "vec3 ambient = ambientStrength * lightColor;\n"
+       
+        + "vec3 norm = normalize(Normal);\n"
+        + "vec3 lightDir = normalize(lightPos - fragPos);\n"
+        + "float diff = max(dot(norm, lightDir), 0.0);\n"
+        + "vec3 diffuse = diff * lightColor;\n"
+                
+        + "float specularStrength = 0.5;"        
+        + "vec3 viewDir = normalize(viewPos - fragPos);"
+        + "vec3 reflectDir = reflect(-lightDir, norm);"
+        + "float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);"
+        + "vec3 specular = specularStrength * spec * lightColor;"
 //        + "vec3 result = (ambient + diffuse) * objectColor;\n"
-        + "vec3 result = ambient * objectColor;\n"
+        //+ "vec3 result = (ambient + diffuse + specular) * texture(diffuseTex, UV).rgb;\n"
+          + "vec3 result = (diffuse + specular) * texture(diffuseTex, UV).rgb;\n"
+        //+ "vec3 result = (ambient + diffuse) * texture(diffuseTex, UV).rgb;\n"
+//        + "vec3 result = (ambient + diffuse + specular) * (objectColor + texture(diffuseTex, UV).rgb);\n"
+//      
 //        + "fragColor = vec4(result, 1.0);\n"
         + "fragColor = vec4(result, 1.0);\n"
+        + "if(texture(diffuseTex, UV).a < 1.0) discard;\n"
         + "}";
 
         String vertexShaderSource = "#version 330 core\n"
-//        + "out vec3 fragPos;"       
-
+        + "out vec3 fragPos;"                  
         + "layout (location = 0) in vec3 aPos;\n"
         + "layout (location = 1) in vec3 aNormal;\n"
         + "layout (location = 2) in vec2 aTexCoord;\n"
@@ -87,11 +99,13 @@ public class Demo {
         + "uniform mat4 view;\n"
         + "uniform mat4 model;\n"
         + "out vec3 Normal;\n"
+        + "out vec2 UV;\n"
         + "void main()\n"
         + "{\n"
         + " gl_Position = projection * view * model * vec4(aPos, 1.0);\n"
         + " Normal = aNormal;\n"
-//        + "fragPos = vec3(model * vec4(aPos, 1.0));"
+        + " UV = aTexCoord;\n"
+        + "fragPos = vec3(model * vec4(aPos, 1.0));"
         + " //mat3 normalMatrix = mat3(transpose(inverse(model))); \n"
         + " //Normal = normalMatrix * aNormal;\n"
         + "}";
@@ -302,14 +316,30 @@ public class Demo {
         shaderProgram.createUniform("model");
         
         shaderProgram.createUniform("lightColor");
-        shaderProgram.createUniform("objectColor");
+//        shaderProgram.createUniform("objectColor");
 
         projection.perspective( (float) Math.toRadians(60.0f), 600.0f/600.0f, 0.001f, 1000.0f);
         view.setTranslation(new Vector3f(0.0f, 0.0f, -4.0f));             
         model.identity();//.translate(new Vector3f(0.0f, 1.0f, 0.0f)).rotate(angle, new Vector3f(1.0f, 0.0f, 0.0f));
 
         
-        
+            InputStream in = new FileInputStream("E:\\Master\\TAG\\OpenGLTemplate\\Cubo\\src\\main\\java\\com\\tga\\opengl\\metal.png");
+//          InputStream in = new FileInputStream(classLoader.getResource("Mario.png").getFile());
+            PNGDecoder decoder = new PNGDecoder(in);
+            System.out.println("width=" + decoder.getWidth());
+            System.out.println("height=" + decoder.getHeight());
+            ByteBuffer buf = ByteBuffer.allocateDirect(4*decoder.getWidth()*decoder.getHeight());
+            decoder.decode(buf, decoder.getWidth()*4, Format.RGBA);
+            buf.flip();
+            textureID = glGenTextures();
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, textureID); // all upcoming GL_TEXTURE_2D operations now have effect on this texture object
+            // set the texture wrapping parameters
+            glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, decoder.getWidth(),
+            decoder.getHeight(), 0, GL_RGBA, GL_UNSIGNED_BYTE, buf);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+            glGenerateMipmap(GL_TEXTURE_2D);  
         
 
 
@@ -431,61 +461,39 @@ public class Demo {
     }
 
     private void loop() throws Exception {
-        
-        
-        
-
-            InputStream in = new FileInputStream("E:\\Master\\TAG\\OpenGLTemplate\\Cubo\\src\\main\\java\\com\\tga\\opengl\\Mario.png");
-//            InputStream in = new FileInputStream(classLoader.getResource("Mario.png").getFile());
-            PNGDecoder decoder = new PNGDecoder(in);
-            System.out.println("width=" + decoder.getWidth());
-            System.out.println("height=" + decoder.getHeight());
-            ByteBuffer buf = ByteBuffer.allocateDirect(4*decoder.getWidth()*decoder.getHeight());
-            decoder.decode(buf, decoder.getWidth()*4, Format.RGBA);
-            buf.flip();
-            textureID = glGenTextures();
-            
-            
-        
         // Run the rendering loop until the user has attempted to close
         // the window or has pressed the ESCAPE key.
         glEnable(GL_DEPTH_TEST);
+        //glEnable(GL_BLEND);
         
         while (!glfwWindowShouldClose(window)) {
 
             // Poll for window events. The key callback above will only be
             // invoked during this call.
             glfwPollEvents();
-            
             glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             shaderProgram.setUniform("projection", projection);
             shaderProgram.setUniform("view", view);
             
-            shaderProgram.setUniform("lightColor", 10.0f,10.0f,10.0f);
-            shaderProgram.setUniform("objectColor", 1.0f,0.0f,0.0f);
+            shaderProgram.setUniform("lightColor", 6.0f,6.0f,6.0f);
+//            shaderProgram.setUniform("objectColor", 0.0f,0.0f,0.0f);
             
             //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
             // render
             // ------
             
-            //Textura
+            //Textura     
             glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, textureID); // all upcoming GL_TEXTURE_2D operations now have effect on this texture object
-            // set the texture wrapping parameters
-            glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, decoder.getWidth(),
-            decoder.getHeight(), 0, GL_RGBA, GL_UNSIGNED_BYTE, buf);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-            glGenerateMipmap(GL_TEXTURE_2D);            
+            glBindTexture(GL_TEXTURE_2D, textureID);
             
-            
-            
-            
+     
             glBindVertexArray(VAO);
 //          Rotacion acumulada cubo
-//          angle += glfwGetTime();
-//          model.identity().translate(new Vector3f(0.0f, 0.0f, 0.0f)).rotate((float)Math.toRadians(angle), new Vector3f(1.0f, 0.0f, 0.0f));
+            //angle += glfwGetTime();
+            angle += 1;
+            model.identity().translate(new Vector3f(0.0f, 0.0f, 0.0f)).rotate((float)Math.toRadians(angle), new Vector3f(0.0f, 1.0f, 0.0f));
+            
             shaderProgram.setUniform("model", model);
             shaderProgram.bind(); 
             //glDrawArrays(GL_TRIANGLES, 0, 3);
