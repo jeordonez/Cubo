@@ -45,7 +45,7 @@ public class Demo {
     int VAO, VBO, VBO2, VBO3, EBO;
     float angle = 0.0f;
 
-    ShaderProgram shaderProgram;                                                                              //aspectratio
+    ShaderProgram shaderProgram;                                                                             
         Matrix4f projection = new Matrix4f();
         Matrix4f view = new Matrix4f(); // identity() not necesary because Matrix4f() generated a identitiy matrix
         Matrix4f model = new Matrix4f(); 
@@ -63,17 +63,31 @@ public class Demo {
         + "uniform vec3 lightColor;\n"
 //        + "uniform vec3 objectColor;\n"
         + "uniform sampler2D diffuseTex;\n"
-       // + "const float ambientStrength = 0.2;\n"
-        + "void main()\n"
-        + "{\n"
-
-       // + "vec3 ambient = ambientStrength * lightColor;\n"
-       
+        + "const float ambientStrength = 0.3;\n"
+        + "void main() {\n"
+        + "// ambient\n"
+        + " vec3 ambient = ambientStrength * lightColor;\n"
+                
+        + " // diffuse\n"
         + "vec3 norm = normalize(Normal);\n"
         + "vec3 lightDir = normalize(lightPos - fragPos);\n"
         + "float diff = max(dot(norm, lightDir), 0.0);\n"
         + "vec3 diffuse = diff * lightColor;\n"
-                
+        
+//        + "//Specular\n" 
+//        + "float specularStrength = 0.7;\n"
+//        + "vec3 viewDir = normalize(viewPos - fragPos);\n"
+//        + "vec3 reflectDir = reflect(-lightDir, norm);\n"
+//        + "float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);\n"
+//        + "vec3 specular = specularStrength * spec * lightColor;\n"
+        
+        //+ "vec3 result = (ambient + diffuse + specular) * vec3(1.0, 1.0, 1.0);\n"               
+        + "vec3 result = (ambient + diffuse) * texture(diffuseTex, UV).rgb;\n"
+        //+ "vec3 result = (ambient + diffuse + specular) * texture(diffuseTex, UV).rgb;\n"
+        + "fragColor = vec4(result, 1.0);\n"
+        + "}";
+        /*
+      
         + "float specularStrength = 0.5;"        
         + "vec3 viewDir = normalize(viewPos - fragPos);"
         + "vec3 reflectDir = reflect(-lightDir, norm);"
@@ -84,11 +98,11 @@ public class Demo {
           + "vec3 result = (diffuse + specular) * texture(diffuseTex, UV).rgb;\n"
         //+ "vec3 result = (ambient + diffuse) * texture(diffuseTex, UV).rgb;\n"
 //        + "vec3 result = (ambient + diffuse + specular) * (objectColor + texture(diffuseTex, UV).rgb);\n"
-//      
 //        + "fragColor = vec4(result, 1.0);\n"
         + "fragColor = vec4(result, 1.0);\n"
-        + "if(texture(diffuseTex, UV).a < 1.0) discard;\n"
-        + "}";
+        //+ "if(texture(diffuseTex, UV).a < 1.0) discard;\n"
+        +        " fragColor = vec4(vec3(diff), 1.0);\n"
+        + "}";*/
 
         String vertexShaderSource = "#version 330 core\n"
         + "out vec3 fragPos;"                  
@@ -103,11 +117,11 @@ public class Demo {
         + "void main()\n"
         + "{\n"
         + " gl_Position = projection * view * model * vec4(aPos, 1.0);\n"
-        + " Normal = aNormal;\n"
+        + " //Normal = aNormal;\n"
         + " UV = aTexCoord;\n"
         + "fragPos = vec3(model * vec4(aPos, 1.0));"
-        + " //mat3 normalMatrix = mat3(transpose(inverse(model))); \n"
-        + " //Normal = normalMatrix * aNormal;\n"
+        + " mat3 normalMatrix = transpose(inverse(mat3(model)));\n"
+        + " Normal = normalMatrix * aNormal;\n"
         + "}";
 
     public void run() throws Exception {
@@ -316,6 +330,7 @@ public class Demo {
         shaderProgram.createUniform("model");
         
         shaderProgram.createUniform("lightColor");
+        shaderProgram.createUniform("lightPos");
 //        shaderProgram.createUniform("objectColor");
 
         projection.perspective( (float) Math.toRadians(60.0f), 600.0f/600.0f, 0.001f, 1000.0f);
@@ -476,7 +491,8 @@ public class Demo {
             shaderProgram.setUniform("projection", projection);
             shaderProgram.setUniform("view", view);
             
-            shaderProgram.setUniform("lightColor", 6.0f,6.0f,6.0f);
+            shaderProgram.setUniform("lightColor", 1.0f,1.0f,1.0f);
+            shaderProgram.setUniform("lightPos", 1.2f, 2.0f, 2.0f);
 //            shaderProgram.setUniform("objectColor", 0.0f,0.0f,0.0f);
             
             //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
