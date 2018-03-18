@@ -2,13 +2,8 @@ package com.tga.opengl;
 
 import de.matthiasmann.twl.utils.PNGDecoder;
 import de.matthiasmann.twl.utils.PNGDecoder.Format;
-import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.io.InputStream;
-import java.net.URISyntaxException;
-import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import org.lwjgl.glfw.*;
@@ -16,9 +11,7 @@ import org.lwjgl.opengl.*;
 import org.lwjgl.system.*;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
-
 import java.nio.IntBuffer;
-
 import static org.lwjgl.glfw.Callbacks.*;
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.*;
@@ -51,8 +44,7 @@ public class Demo {
         Matrix4f model = new Matrix4f(); 
         
         int textureID;
-//        ClassLoader classLoader = getClass().getClassLoader();
-
+        
         String fragmentShaderSource = "#version 330 core\n"
         + "out vec4 fragColor;\n"
         + "in vec3 fragPos;\n"
@@ -74,16 +66,16 @@ public class Demo {
         + "float diff = max(dot(norm, lightDir), 0.0);\n"
         + "vec3 diffuse = diff * lightColor;\n"
         
-//        + "//Specular\n" 
-//        + "float specularStrength = 0.7;\n"
-//        + "vec3 viewDir = normalize(viewPos - fragPos);\n"
-//        + "vec3 reflectDir = reflect(-lightDir, norm);\n"
-//        + "float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);\n"
-//        + "vec3 specular = specularStrength * spec * lightColor;\n"
+        + "//Specular\n" 
+        + "float specularStrength = 0.5;\n"
+        + "vec3 viewDir = normalize(viewPos - fragPos);\n"
+        + "vec3 reflectDir = reflect(-lightDir, norm);\n"
+        + "float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);\n"
+        + "vec3 specular = specularStrength * spec * lightColor;\n"
         
         //+ "vec3 result = (ambient + diffuse + specular) * vec3(1.0, 1.0, 1.0);\n"               
-        + "vec3 result = (ambient + diffuse) * texture(diffuseTex, UV).rgb;\n"
-        //+ "vec3 result = (ambient + diffuse + specular) * texture(diffuseTex, UV).rgb;\n"
+        //+ "vec3 result = (ambient + diffuse) * texture(diffuseTex, UV).rgb;\n"
+        + "vec3 result = (ambient + diffuse + specular) * texture(diffuseTex, UV).rgb;\n"
         + "fragColor = vec4(result, 1.0);\n"
         + "}";
         /*
@@ -522,5 +514,24 @@ public class Demo {
     public static void main(String[] args) throws Exception {
         new Demo().run();
     }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
 
 }

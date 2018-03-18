@@ -1,5 +1,9 @@
 
 package com.tga.opengl;
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
 import java.nio.FloatBuffer;
 import java.util.HashMap;
 import java.util.Map;
@@ -66,11 +70,15 @@ public class ShaderProgram {
                 }
 		
     public void createVertexShader(String sc) throws Exception {
+       
         vertexShaderId = createShader(sc, GL_VERTEX_SHADER);
     }
     public void createFragmentShader(String sc) throws Exception {
-        vertexShaderId = createShader(sc, GL_FRAGMENT_SHADER);
+        fragmentShaderId = createShader(sc, GL_FRAGMENT_SHADER);
     }
+    
+
+    
     protected int createShader(String sc, int shaderType) throws Exception {
     int shaderId = glCreateShader(shaderType);
     if (shaderId == 0) {
